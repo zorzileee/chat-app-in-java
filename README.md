@@ -2,84 +2,178 @@
 chat application written in java
 package zappa;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.EventQueue;
 
-import javax.swing.text.html.HTMLDocument.HTMLReader.IsindexAction;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.Color;
+import java.awt.Font;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JMenu;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
-public class Client implements Runnable {
-	static Socket connectionSocket = null;
-	static BufferedReader ulazniTokOdServera = null;
-	static PrintStream izlazniTokKaServeru = null;
-	static boolean ende = false;
-	static int udpPort;
-	static ClientGUI cgi = null;
-	Thread t = null;
+public class ClientGUI extends JFrame {
+
+	private static final long serialVersionUID = 1L;
+	private JPanel contentPane;
+	private JScrollPane scrollPane;
+	private JTextArea textArea;
+	private JPanel panel;
 	
-	public Client() {
-		t = new Thread(this);
-		t.start();
+	
+	private JPanel panel_1;
+	private JLabel lblUnosPoruke;
+	private JTextField textField;
+	private JButton btnPosaljiPoruku;
+	private JMenuBar menuBar;
+	private JMenu mnEdit;
+	private JMenu mnHelp;
+	private JMenuItem menuItem1;
+
+	/**
+	 * Launch the application.
+	 */
+
+	/**
+	 * Create the frame.
+	 */
+	public ClientGUI() {
+		setTitle("Client GUI");
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setBounds(100, 100, 450, 300);
+		setJMenuBar(getMenuBar_1());
+		contentPane = new JPanel();
+		contentPane.setBackground(new Color(255, 255, 204));
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		setContentPane(contentPane);
+		contentPane.setLayout(new BorderLayout(0, 0));
+		contentPane.add(getScrollPane(), BorderLayout.CENTER);
+		contentPane.add(getPanel(), BorderLayout.SOUTH);
+		contentPane.add(getPanel_1(), BorderLayout.SOUTH);
+	}
+
+	private JScrollPane getScrollPane() {
+		if (scrollPane == null) {
+			scrollPane = new JScrollPane();
+			scrollPane.setViewportView(getTextArea1());
+		}
+		return scrollPane;
+	}
+	public JTextArea getTextArea1() {
+		if (textArea == null) {
+			textArea = new JTextArea();
+			textArea.setLineWrap(true);
+		}
+		return textArea;
+	}
+	private JPanel getPanel() {
+		if (panel == null) {
+			panel = new JPanel();
+			
+		
+		}
+		return panel;
 	}
 	
-	public static void main(String[] args) {
-		int port = 8090;
-		
-		if(args.length>0) {
-			port = Integer.parseInt(args[0]);
+	private JPanel getPanel_1() {
+		if (panel_1 == null) {
+			panel_1 = new JPanel();
+			panel_1.setBackground(new Color(153, 204, 204));
+			panel_1.add(getLblUnosPoruke());
+			panel_1.add(getTextField());
+			panel_1.add(getBtnPosaljiPoruku());
 		}
-		
-		try {
-			connectionSocket = new Socket("localhost", port);
-			ulazniTokOdServera = new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()));
-			izlazniTokKaServeru = new PrintStream(connectionSocket.getOutputStream());
-			
-			cgi = new ClientGUI();
-			cgi.setVisible(true);
-			new Client();
-			
-			while(!ende) {}
-			
-			connectionSocket.close();
-			
-		} catch (UnknownHostException e) {
-			System.err.println(e);
-		} catch(IOException e) {
-			System.err.println(e);
-		}
-		
+		return panel_1;
 	}
-	@Override
-	public void run() {
-		String lajna = "";
-		boolean keepGoing = false;
-		
-		try {
-			while((lajna = ulazniTokOdServera.readLine().trim())!=null) {
-				if(cgi == null) {
-					System.out.println(lajna);
-				} else {
-					cgi.myAppend(lajna);
-				}
-				if(lajna.startsWith("** Dovidjenja")) {
-					ende = true;
-					break;
-				}
-				if(!keepGoing && Character.isDigit(lajna.charAt(lajna.length()-1)) && Character.isDigit(lajna.charAt(lajna.length()-2))
-						&& Character.isDigit(lajna.charAt(lajna.length()-3)) && Character.isDigit(lajna.charAt(lajna.length()-4))
-						&& Character.isDigit(lajna.charAt(lajna.length()-5))) {
-					keepGoing = true;
-					udpPort = Integer.parseInt(lajna.substring(lajna.length()-5));
-					new ClientThread(udpPort);
-				}
-			}
-		} catch(IOException e) {
-			System.err.println(e);
+	private JLabel getLblUnosPoruke() {
+		if (lblUnosPoruke == null) {
+			lblUnosPoruke = new JLabel("Your message : ");
 		}
-
+		return lblUnosPoruke;
 	}
+	private JTextField getTextField() {
+		if (textField == null) {
+			textField = new JTextField();
+			textField.setColumns(17);
+		}
+		return textField;
+	}
+	private JButton getBtnPosaljiPoruku() {
+		if (btnPosaljiPoruku == null) {
+			btnPosaljiPoruku = new JButton("Send");
+			btnPosaljiPoruku.setForeground(new Color(0, 51, 0));
+			btnPosaljiPoruku.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent arg0) {
+					Client.izlazniTokKaServeru.println(getMessageToServer());
+					textField.setText(null);
+				}
+			});
+			btnPosaljiPoruku.setFont(new Font("Times New Roman", Font.BOLD, 13));
+			btnPosaljiPoruku.setBackground(new Color(153, 153, 153));
+		}
+		return btnPosaljiPoruku;
+	}
+	public void myAppend(String lajna) {
+		textArea.append(lajna + "\n");
+	}
+	public String getMessageToServer() {
+		return textField.getText();
+	}
+	private JMenuBar getMenuBar_1() {
+		if (menuBar == null) {
+			menuBar = new JMenuBar();
+			menuBar.add(getMnEdit());
+			menuBar.add(getMnHelp());
+		}
+		return menuBar;
+	}
+	private JMenuItem getMenuItem1() {
+		if(menuItem1 == null) {
+			menuItem1 = new JMenuItem("Clear");
+			menuItem1.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					textArea.setText("");
+					
+				}
+			});
+			
+		}
+		return menuItem1;
+	}
+	private JMenu getMnEdit() {
+		if (mnEdit == null) {
+			mnEdit = new JMenu("Edit");
+			mnEdit.add(getMenuItem1());
+			
+		}
+		return mnEdit;
+	}
+	private JMenu getMnHelp() {
+		if (mnHelp == null) {
+			mnHelp = new JMenu("Help");
+		}
+		return mnHelp;
+	}
+	/*public static void main(String[] args) {
+		new ClientGUI().setVisible(true);
+	}*/
 }
+
 
